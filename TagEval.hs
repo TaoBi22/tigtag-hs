@@ -10,19 +10,21 @@ tagEval1r (x:xs) rule = if x == triggerchar rule then
 
 
 -- Runs one iteration of Tag evaluation on a queue - as soon as it finds an applicable rule it returns the result
-tagEvalOnce :: String -> [Rule] -> String
-tagEvalOnce "" _ = ""
-tagEvalOnce (x:xs) [] = xs
+tagEvalOnce :: String -> [Rule] -> (String, String)
+tagEvalOnce "" _ = ("", "")
+tagEvalOnce (x:xs) [] = (xs, "")
 tagEvalOnce (x:xs) (r:rs) = if x == triggerchar r then
-                              (removeStartChars xs (numbertodrop r - 1) ++ (append_chars r))
+                              let printstr = if printchars r then take (fromIntegral (numbertodrop r - 1)) xs else "" in
+                              (removeStartChars xs (numbertodrop r - 1) ++ (append_chars r), printstr)
                             else
                              tagEvalOnce (x:xs) rs
 
-tagEval :: String -> [Rule] -> String
-tagEval "" _ = ""
-tagEval x [] = x
-tagEval ('#':xs) _ = xs -- # is our halting character so we just return the stack remainder as the result
-tagEval x r = tagEval (tagEvalOnce x r) r -- Evaluate the string according to the rules once, and recurse again
+tagEval :: String -> [Rule] -> IO String
+tagEval "" _ = do return ""
+tagEval x [] = do return x
+tagEval ('#':xs) _ = do return xs -- # is our halting character so we just return the stack remainder as the result
+tagEval x r = do putStr printstr; (tagEval stackstr r)
+              where (stackstr, printstr) = (tagEvalOnce x r) -- Evaluate the string according to the rules once, and recurse again
 
 
 removeStartChars :: String -> Integer -> String
